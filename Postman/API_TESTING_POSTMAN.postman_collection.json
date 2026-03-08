@@ -1,0 +1,326 @@
+{
+  "info": {
+    "_postman_id": "c5724c67-f7ff-42c2-8596-566d04c0b2d2",
+    "name": "API_TESTING_POSTMAN",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "9525125"
+  },
+  "item": [
+    {
+      "name": "Success case",
+      "item": [
+        {
+          "name": "/images/search",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Validate the field 'id' is present in the response body\", function () {",
+                  "    pm.expect(pm.response.text()).to.include(\"id\");",
+                  "});",
+                  "",
+                  "",
+                  "// 1. Parse the JSON response",
+                  "const responseData = pm.response.json();",
+                  "",
+                  "// 2. Access the 'id' inside the first breed of the first item",
+                  "// Structure: Array[0] -> breeds[0] -> id",
+                  "const breedId = responseData[0].breeds[0].id;",
+                  "",
+                  "// 3. Set a collection variable to use in the next request",
+                  "pm.collectionVariables.set(\"breed_id\", breedId);",
+                  "",
+                  "// Log to console to verify",
+                  "console.log(\"Extracted Breed ID: \" +breedId);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}",
+                "description": "[optional] without it only the a basic set of images can be searched"
+              }
+            ],
+            "url": {
+              "raw": "{{endpoint}}v1/images/search?size=med&mime_types=jpg&format=json&has_breeds=true&order=RANDOM&page=0&limit=1",
+              "host": [
+                "{{endpoint}}v1"
+              ],
+              "path": [
+                "images",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "med",
+                  "description": "[optional] thumb , small, med or full - small is perfect for Discord"
+                },
+                {
+                  "key": "mime_types",
+                  "value": "jpg",
+                  "description": "[optional] a comma separated strig of types to return e.g. jpg,png for static, or gif for gifs"
+                },
+                {
+                  "key": "format",
+                  "value": "json",
+                  "description": "[optional] json | src"
+                },
+                {
+                  "key": "has_breeds",
+                  "value": "true",
+                  "description": "[optional] - only return images with breed data"
+                },
+                {
+                  "key": "order",
+                  "value": "RANDOM",
+                  "description": "[optional] default:RANDOM - RANDOM | ASC | DESC"
+                },
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "[optional] paginate through results"
+                },
+                {
+                  "key": "limit",
+                  "value": "1",
+                  "description": "[optional] number of results to return, up to 25 with a valid API-Key"
+                },
+                {
+                  "key": "include_breeds",
+                  "value": "1",
+                  "description": "[optional] default to true. Adds the 'breed' object ot the image, only if an api",
+                  "disabled": true
+                },
+                {
+                  "key": "include_categories",
+                  "value": "1",
+                  "description": "[optional] default to true. Adds the 'breed' object ot the image, only if an api",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Searchs all approved images. Default is to reutrn RANDOM images, but with an API-Key you can use 'order=DESC' or 'order=ASC' along with the 'page' and 'limit' parameters to paginate through them in the order they were approved.\n\nPagination-Count, Pagination-Page, and Pagination-Limit headers are present in the response so you know the total number of images that can be paginated through for the passed search filters."
+          },
+          "response": []
+        },
+        {
+          "name": "/votes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "",
+                  "//Define the expected schema",
+                  "const schema = {",
+                  "  \"type\": \"object\",",
+                  "  \"required\": [\"message\", \"id\", \"image_id\", \"sub_id\", \"value\", \"country_code\"],",
+                  "  \"properties\": {",
+                  "    \"message\": { \"type\": \"string\" },",
+                  "    \"id\": { \"type\": \"integer\" },",
+                  "    \"image_id\": { \"type\": \"string\" },",
+                  "    \"sub_id\": { \"type\": \"string\" },",
+                  "    \"value\": { \"type\": \"integer\" },",
+                  "    \"country_code\": { \"type\": \"string\" }",
+                  "  }",
+                  "};",
+                  "",
+                  "//Validate the response body",
+                  "pm.test('Schema validation', () => {",
+                  "  pm.response.to.have.jsonSchema (schema);",
+                  "});",
+                  "",
+                  "",
+                  "pm.test(\"Status code is 200 or 201\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "",
+                  "pm.test(\"Validate that image_id matches the saved breed_id\", function () {",
+                  "    //Get the value you stored from the previous request",
+                  "    const expectedBreedId = pm.collectionVariables.get(\"breed_id\");",
+                  "    ",
+                  "    //Parse the current response",
+                  "    const jsonData = pm.response.json();",
+                  "    ",
+                  "    //Perform the validation",
+                  "    pm.expect(jsonData.image_id).to.eql(expectedBreedId);",
+                  "});",
+                  "",
+                  "pm.test(\"Verify sub_id and status message\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.eql(\"SUCCESS\");",
+                  "    pm.expect(jsonData.sub_id).to.eql(\"my-user-1234\");",
+                  "});",
+                  "",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disabledSystemHeaders": {
+              "content-type": true
+            }
+          },
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}",
+                "description": "[required]"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"image_id\": \"{{breed_id}}\",\n    \"sub_id\": \"my-user-1234\",\n    \"value\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{endpoint}}v1/votes",
+              "host": [
+                "{{endpoint}}v1"
+              ],
+              "path": [
+                "votes"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Failed case",
+      "item": [
+        {
+          "name": "/votes Failed case",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"Validate error message for blank in image_id\", function () {",
+                  "    pm.expect(pm.response.text()).to.include(`\"image_id\" is not allowed to be empty`);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disabledSystemHeaders": {
+              "content-type": true
+            }
+          },
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}",
+                "description": "[required]"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"image_id\": \"\",\n    \"sub_id\": \"my-user-1234\",\n    \"value\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{endpoint}}v1/votes",
+              "host": [
+                "{{endpoint}}v1"
+              ],
+              "path": [
+                "votes"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "breed_id",
+      "value": ""
+    },
+    {
+      "key": "API-KEY",
+      "value": "",
+      "type": "default"
+    }
+  ]
+}
