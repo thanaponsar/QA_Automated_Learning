@@ -32,7 +32,7 @@ It includes a realistic Application Under Test (AUT), UI automation scripts, and
 
 | Category | Technology |
 |----------|------------|
-| **Automation Framework** | Playwright | Robot Framework |
+| **Automation Framework** | Playwright, Robot Framework |
 | **API Tool** | Postman |
 | **Language** | TypeScript, JavaScript |
 
